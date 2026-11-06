@@ -10,6 +10,8 @@ try:
 except ImportError:
     FSOCIETY_AVAILABLE = False
 
+BASE = os.path.dirname(os.path.abspath(__file__))
+
 CYAN = "\033[1;36m"
 GRAY = "\033[90m"
 WHITE = "\033[97m"
@@ -32,7 +34,7 @@ R3CON_BANNER = rf"""{CYAN}
 def launch_fsociety():
     if not FSOCIETY_AVAILABLE:
         print(f"\n{RED}[!] F-SOCIETY core modules not found.{RESET}")
-        print(f"{GRAY}    Ensure the 'fsociety' directory exists in the same folder as r3con.py.{RESET}")
+        print(f"{GRAY}    Ensure 'fsociety' directory exists next to r3con.py.{RESET}")
         input(f"\n{GRAY}Press Enter to return...{RESET}")
         return
     show_splash()
@@ -41,13 +43,23 @@ def launch_fsociety():
     time.sleep(1)
 
 def launch_cint():
-    cint_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cint.py")
-    if not os.path.exists(cint_path):
-        print(f"\n{RED}[!] cint.py not found in R3CON root.{RESET}")
+    path = os.path.join(BASE, "cint.py")
+    if not os.path.exists(path):
+        print(f"\n{RED}[!] cint.py not found.{RESET}")
         input(f"\n{GRAY}Press Enter to return...{RESET}")
         return
-    subprocess.run([sys.executable, cint_path])
+    subprocess.run([sys.executable, path])
     print(f"\n{GRAY}[*] Closing CINT, returning to R3CON...{RESET}")
+    time.sleep(1)
+
+def launch_mc_killer():
+    path = os.path.join(BASE, "MC-KILLER", "mc_killer.py")
+    if not os.path.exists(path):
+        print(f"\n{RED}[!] MC-KILLER/mc_killer.py not found.{RESET}")
+        input(f"\n{GRAY}Press Enter to return...{RESET}")
+        return
+    subprocess.run([sys.executable, path])
+    print(f"\n{GRAY}[*] Closing MC-KILLER, returning to R3CON...{RESET}")
     time.sleep(1)
 
 def main_menu():
@@ -59,17 +71,20 @@ def main_menu():
         print(f"╠══════════════════════════════════════════════════════════════╣")
         print(f"║ {GREEN}[01]{RESET} F-SOCIETY - Network & Exploitation Suite           {CYAN}║")
         print(f"║ {GREEN}[02]{RESET} CINT      - Cyber Intelligence Toolkit (Go)        {CYAN}║")
-        print(f"║ {GRAY}[03] CLINT     - Coming Soon...{RESET}                             {CYAN}║")
+        print(f"║ {GREEN}[03]{RESET} MC-KILLER - Minecraft Server Stress Framework      {CYAN}║")
         print(f"║ {GRAY}[04] ...       - Coming Soon...{RESET}                             {CYAN}║")
+        print(f"║ {GRAY}[Q]  Quit{RESET}                                                  {CYAN}║")
         print(f"╚══════════════════════════════════════════════════════════════╝{RESET}")
 
-        choice = input(f"\n{GREEN}root@r3con:~#{RESET} ").strip()
+        choice = input(f"\n{GREEN}root@r3con:~#{RESET} ").strip().lower()
 
         if choice == "1":
             launch_fsociety()
         elif choice == "2":
             launch_cint()
-        elif choice.lower() in ("q", "exit"):
+        elif choice == "3":
+            launch_mc_killer()
+        elif choice in ("q", "exit"):
             print(f"\n{GRAY}[*] Exiting R3CON...{RESET}")
             sys.exit(0)
 
