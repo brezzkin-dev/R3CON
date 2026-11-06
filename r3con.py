@@ -3,11 +3,14 @@ import sys
 import time
 import subprocess
 
-from fsociety.core.splash import show_splash
-from fsociety.core.menu import interactive_menu
+try:
+    from fsociety.core.splash import show_splash
+    from fsociety.core.menu import interactive_menu
+    FSOCIETY_AVAILABLE = True
+except ImportError:
+    FSOCIETY_AVAILABLE = False
 
 CYAN = "\033[1;36m"
-PURPLE = "\033[95m"
 GRAY = "\033[90m"
 WHITE = "\033[97m"
 GREEN = "\033[92m"
@@ -27,6 +30,11 @@ R3CON_BANNER = rf"""{CYAN}
 """
 
 def launch_fsociety():
+    if not FSOCIETY_AVAILABLE:
+        print(f"\n{RED}[!] F-SOCIETY core modules not found.{RESET}")
+        print(f"{GRAY}    Ensure the 'fsociety' directory exists in the same folder as r3con.py.{RESET}")
+        input(f"\n{GRAY}Press Enter to return...{RESET}")
+        return
     show_splash()
     interactive_menu()
     print(f"\n{GRAY}[*] Closing F-SOCIETY, returning to R3CON...{RESET}")
@@ -35,8 +43,8 @@ def launch_fsociety():
 def launch_cint():
     cint_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cint.py")
     if not os.path.exists(cint_path):
-        print(f"{RED}[!] cint.py not found in R3CON root.{RESET}")
-        input(f"{GRAY}Press Enter to return...{RESET}")
+        print(f"\n{RED}[!] cint.py not found in R3CON root.{RESET}")
+        input(f"\n{GRAY}Press Enter to return...{RESET}")
         return
     subprocess.run([sys.executable, cint_path])
     print(f"\n{GRAY}[*] Closing CINT, returning to R3CON...{RESET}")
@@ -54,9 +62,9 @@ def main_menu():
         print(f"║ {GRAY}[03] CLINT     - Coming Soon...{RESET}                             {CYAN}║")
         print(f"║ {GRAY}[04] ...       - Coming Soon...{RESET}                             {CYAN}║")
         print(f"╚══════════════════════════════════════════════════════════════╝{RESET}")
-        
+
         choice = input(f"\n{GREEN}root@r3con:~#{RESET} ").strip()
-        
+
         if choice == "1":
             launch_fsociety()
         elif choice == "2":
