@@ -37,7 +37,7 @@ def render_menu():
             print(line)
             
         print(f"\033[96m╚══════════════════════════════════════════════════════════════════════════════╝\033[0m")
-        print("\n\033[92m[Q]\033[0m Quit \033[90m| Type the name of a tool to see its options.\033[0m")
+        print("\n\033[92m[Q]\033[0m Quit \033[90m| Type a tool name for options, or a full command to execute.\033[0m")
 
 def interactive_menu():
     # CRITICAL: Load tools into registry before rendering
@@ -49,25 +49,46 @@ def interactive_menu():
     while True:
         render_menu()
         try:
-            choice = input("\n\033[92mroot@fsociety:~#\033[0m ").strip()
+            cmd_input = input("\n\033[92mroot@fsociety:~#\033[0m ").strip()
         except (EOFError, KeyboardInterrupt):
             print()
             break
             
-        if choice.lower() in ("q", "exit", "back"):
+        if cmd_input.lower() in ("q", "exit", "back"):
             break
-            
-        entry = base.resolve(choice)
+
+        # Strip 'fsociety ' prefix if the user typed it
+        if cmd_input.startswith("fsociety "):
+            cmd_input = cmd_input[9:]
+
+        parts = cmd_input.split()
+        if not parts:
+            continue
+
+        tool_name = parts[0]
+        entry = base.resolve(tool_name)
+
         if entry:
-            os.system('cls' if os.name == 'nt' else 'clear')
-            print(f"\033[96m=== F-SOCIETY: {entry.name.upper()} ===\033[0m\n")
-            print(f"\033[90m{entry.summary}\033[0m\n")
-            
-            # Show help/args for this specific tool
-            subprocess.run([sys.executable, "-m", "fsociety", entry.name, "--help"])
-            
-            print(f"\n\033[92mTo run: fsociety {entry.name} <args>\033[0m")
-            input("\nPress Enter to return to menu...")
+            if len(parts) == 1:
+                # User just typed the tool name -> show help
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\033[96m=== F-SOCIETY: {entry.name.upper()} ===\033[0m\n")
+                print(f"\033[90m{entry.summary}\033[0m\n")
+                
+                subprocess.run([sys.executable, "-m", "fsociety", entry.name, "--help"])
+                
+                print(f"\n\033[92mTo run: {entry.name} <args>\033[0m (or type 'back' to quit)")
+                input("\nPress Enter to return to menu...")
+            else:
+                # User typed arguments -> execute the tool directly
+                os.system('cls' if os.name == 'nt' else 'clear')
+                print(f"\033[96m[*] Executing: fsociety {' '.join(parts)}\033[0m\n")
+                try:
+                    subprocess.run([sys.executable, "-m", "fsociety", *parts])
+                except KeyboardInterrupt:
+                    print("\n\033[93m[!] Execution interrupted.\033[0m")
+                print()
+                input("\nPress Enter to return to menu...")
         else:
-            print(f"\033[91m[!] Tool '{choice}' not found.\033[0m")
+            print(f"\033[91m[!] Tool '{tool_name}' not found.\033[0m")
             input("Press Enter to continue...")
