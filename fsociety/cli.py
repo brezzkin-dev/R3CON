@@ -1,4 +1,6 @@
+# fsociety/cli.py
 from __future__ import annotations
+
 import argparse
 import importlib
 import pkgutil
@@ -9,16 +11,18 @@ from fsociety.core import base, config
 from fsociety.core.logger import Log
 from fsociety.core.output import table
 
+
 def load_tools() -> list[tuple[str, str]]:
-    errors = []
+    errors: list[tuple[str, str]] = []
     try:
         pkg = importlib.import_module("fsociety.tools")
     except Exception as exc:
-        errors.append(("fsociety.tools", str(exc)))
+        errors.append(("fsociety.tools", f"{type(exc).__name__}: {exc}"))
         return errors
 
     path = getattr(pkg, "__path__", None)
     if not path:
+        errors.append(("fsociety.tools", "__path__ missing"))
         return errors
 
     for mod in pkgutil.iter_modules(path):
@@ -26,22 +30,31 @@ def load_tools() -> list[tuple[str, str]]:
         try:
             importlib.import_module(full)
         except Exception as exc:
-            errors.append((full, str(exc)))
+            errors.append((full, f"{type(exc).__name__}: {exc}"))
     return errors
 
-def main(argv=None) -> int:
-    load_tools()
-    argv = list(sys.argv[1:] if argv is None else argv)
 
-    root = argparse.ArgumentParser(
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
         prog="fsociety",
-        description=f"{config.CODENAME} v{config.VERSION}",
+        description=f"{config.CODENAME} v{config.VERSION} — {config.AUTHOR}",
         epilog="Use 'fsociety --list' to enumerate modules.",
     )
-    root.add_argument("--list", action="store_true", help="list registered tools")
-    root.add_argument("--category", help="filter --list by category")
-    root.add_argument("--version", action="version", version=config.VERSION)
-    root.add_argument("--debug", action="store_true", help="verbose logging")
+    parser.add_argument("--list", action="store_true", help="list registered tools")
+    parser.add_argument("--category", help="filter --list by category")
+    parser.add_argument("--version", action="version", version=config.VERSION)
+    parser.add_argument("--no-banner", action="store_true", help="suppress banner")
+    parser.add_argument("--debug", action="store_true", help="verbose logging")
+    return parser
+
+
+def main(argv=None) -> int:
+    errors = load_tools()
+    for name, err in errors:
+        sys.stderr.write(f"[import-fail] {name}: {err}\n")
+
+    argv = list(sys.argv[1:] if argv is None else argv)
+    root = build_parser()
 
     if not argv:
         print(config.BANNER, file=sys.stderr)
@@ -53,6 +66,9 @@ def main(argv=None) -> int:
         entries = base.all_tools()
         if pre.category:
             entries = [t for t in entries if t.category == pre.category]
+        if not entries:
+            print("no tools registered", file=sys.stderr)
+            return 1
         rows = [(t.name, t.category, ", ".join(t.aliases) or "-", t.summary) for t in entries]
         print(table(rows, ["TOOL", "CATEGORY", "ALIASES", "SUMMARY"]))
         return 0
@@ -68,7 +84,6 @@ def main(argv=None) -> int:
     sub.add_argument("--debug", action="store_true", help="verbose logging")
     entry.build_parser(sub)
     args = sub.parse_args(argv[1:])
-    
     if not getattr(args, "no_banner", False):
         print(config.BANNER, file=sys.stderr)
 
@@ -84,6 +99,7 @@ def main(argv=None) -> int:
     except Exception:
         traceback.print_exc()
         return 1
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
