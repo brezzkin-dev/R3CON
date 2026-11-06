@@ -11,7 +11,7 @@ class Tool:
     summary: str
     category: str
     build_parser: Callable[[argparse.ArgumentParser], None]
-    run: Callable
+    run: Callable[[argparse.Namespace], int]
     aliases: List[str] = field(default_factory=list)
 
 
@@ -20,6 +20,7 @@ _ALIAS: Dict[str, str] = {}
 
 
 def tool(name: str, summary: str, category: str = "general", aliases=None):
+    """Register a tool class. Class must expose build_parser(p) and run(args)."""
     def decorator(cls):
         entry = Tool(
             name=name,
@@ -46,3 +47,7 @@ def resolve(name: str):
 
 def all_tools() -> List[Tool]:
     return sorted(_TOOLS.values(), key=lambda t: t.name)
+
+
+def categories() -> List[str]:
+    return sorted({t.category for t in _TOOLS.values()})

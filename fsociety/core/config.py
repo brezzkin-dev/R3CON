@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
-VERSION = "2.0.0"
+VERSION = "1.0.0"
 CODENAME = "F-SOCIETY"
 AUTHOR = "L1ghtXr"
 CONTRIBUTOR = "DevBrezz"
