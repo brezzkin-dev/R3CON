@@ -1,92 +1,149 @@
+# FILE: r3con.py
+#!/usr/bin/env python3
+"""
+R3CON — main menu and launcher.
+Modules: fsociety, CINT, MC-KILLER, PAYLOADFORGE, SCAMBLR.
+"""
+from __future__ import annotations
+
 import os
 import sys
 import time
 import subprocess
 
-try:
-    from fsociety.core.splash import show_splash
-    from fsociety.core.menu import interactive_menu
-    FSOCIETY_AVAILABLE = True
-except ImportError:
-    FSOCIETY_AVAILABLE = False
-
 BASE = os.path.dirname(os.path.abspath(__file__))
 
+# ─── ANSI palette ──────────────────────────────────────────────────────────
 CYAN = "\033[1;36m"
 GRAY = "\033[90m"
 WHITE = "\033[97m"
 GREEN = "\033[92m"
 RED = "\033[91m"
+YELLOW = "\033[93m"
 RESET = "\033[0m"
 
-R3CON_BANNER = rf"""{CYAN}
-██████╗ ██████╗  ██████╗ ██████╗ ███╗   ██╗
-██╔══██╗╚════██╗██╔════╝██╔═══██╗████╗  ██║
-██████╔╝ █████╔╝██║     ██║   ██║██╔██╗ ██║
-██╔══██╗ ╚═══██╗██║     ██║   ██║██║╚██╗██║
-██║  ██║██████╔╝╚██████╗╚██████╔╝██║ ╚████║
-╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝
-{RESET}
-{WHITE}Author: L1ghtXr | Contributor: DevBrezz{RESET}
-{GRAY}All-in-One Offensive Security Framework{RESET}
+BANNER = rf"""{CYAN}
+ ██████╗ ██████╗  ██████╗ ██████╗ ███╗   ██╗
+ ██╔══██╗╚════██╗██╔════╝██╔═══██╗████╗  ██║
+ ██████╔╝ █████╔╝██║     ██║   ██║██╔██╗ ██║
+ ██╔══██╗ ╚═══██╗██║     ██║   ██║██║╚██╗██║
+ ██║  ██║██████╔╝╚██████╗╚██████╔╝██║ ╚████║
+ ╚═╝  ╚═╝╚═════╝  ╚═════╝ ╚═════╝ ╚═╝  ╚═══╝
+{RESET}{WHITE}R3CON — Modular Offensive Toolkit{RESET}
+{GRAY}recon · osint · payloads · floods · osint-in{RESET}
 """
 
-def launch_fsociety():
-    if not FSOCIETY_AVAILABLE:
-        print(f"\n{RED}[!] F-SOCIETY core modules not found.{RESET}")
-        print(f"{GRAY}    Ensure 'fsociety' directory exists next to r3con.py.{RESET}")
-        input(f"\n{GRAY}Press Enter to return...{RESET}")
+# ─── helpers ───────────────────────────────────────────────────────────────
+
+def clear() -> None:
+    os.system("cls" if os.name == "nt" else "clear")
+
+
+def pause() -> None:
+    input(f"\n{GRAY}Press Enter to return...{RESET}")
+
+
+def launch(py_path: str, label: str) -> None:
+    """Launch a python module in a subprocess, then return to R3CON."""
+    if not os.path.exists(py_path):
+        print(f"\n{RED}[!] {label} not found at {py_path}{RESET}")
+        pause()
         return
-    show_splash()
-    interactive_menu()
-    print(f"\n{GRAY}[*] Closing F-SOCIETY, returning to R3CON...{RESET}")
+    try:
+        subprocess.run([sys.executable, py_path])
+    except KeyboardInterrupt:
+        pass
+    except Exception as exc:
+        print(f"\n{RED}[!] {label} crashed: {exc}{RESET}")
+        pause()
+        return
+    print(f"\n{GRAY}[*] Closing {label}, returning to R3CON...{RESET}")
     time.sleep(1)
+
+
+# ─── module launchers ──────────────────────────────────────────────────────
+
+def launch_fsociety():
+    launch(os.path.join(BASE, "fsociety", "fsociety.py"), "FSOCIETY")
+
 
 def launch_cint():
-    path = os.path.join(BASE, "cint.py")
-    if not os.path.exists(path):
-        print(f"\n{RED}[!] cint.py not found.{RESET}")
-        input(f"\n{GRAY}Press Enter to return...{RESET}")
-        return
-    subprocess.run([sys.executable, path])
-    print(f"\n{GRAY}[*] Closing CINT, returning to R3CON...{RESET}")
-    time.sleep(1)
+    launch(os.path.join(BASE, "CINT", "cint.py"), "CINT")
+
 
 def launch_mc_killer():
-    path = os.path.join(BASE, "MC-KILLER", "mc_killer.py")
-    if not os.path.exists(path):
-        print(f"\n{RED}[!] MC-KILLER/mc_killer.py not found.{RESET}")
-        input(f"\n{GRAY}Press Enter to return...{RESET}")
-        return
-    subprocess.run([sys.executable, path])
-    print(f"\n{GRAY}[*] Closing MC-KILLER, returning to R3CON...{RESET}")
-    time.sleep(1)
+    launch(os.path.join(BASE, "MC-KILLER", "mc_killer.py"), "MC-KILLER")
 
-def main_menu():
+
+def launch_payloadforge():
+    launch(os.path.join(BASE, "PAYLOADFORGE", "payloadforge.py"), "PAYLOADFORGE")
+
+
+def launch_scamblr():
+    launch(os.path.join(BASE, "SCAMBLR", "scamblr_entry.py"), "SCAMBLR")
+
+
+# ─── menu ──────────────────────────────────────────────────────────────────
+
+MENU_WIDTH = 64
+
+
+def _line(text: str, color: str = WHITE, pad: int = MENU_WIDTH) -> str:
+    # Visible length is text without ANSI codes; build padded row.
+    import re
+    visible = re.sub(r"\033\[[0-9;]*m", "", text)
+    pad_n = max(0, pad - len(visible))
+    return f"{CYAN}║{RESET} {color}{text}{RESET}{' ' * pad_n}{CYAN}║{RESET}"
+
+
+def draw_menu() -> None:
+    print(BANNER)
+    print(f"{CYAN}╔{'═' * MENU_WIDTH}╗")
+    print(_line("R3CON MAIN MENU", WHITE))
+    print(f"{CYAN}╠{'═' * MENU_WIDTH}╣")
+    print(_line("[01] FSOCIETY      - OSINT / recon framework", GREEN))
+    print(_line("[02] CINT          - Contact intelligence", GREEN))
+    print(_line("[03] MC-KILLER     - Minecraft server killer", GREEN))
+    print(_line("[04] PAYLOADFORGE  - Payload gen + obfuscation", GREEN))
+    print(_line("[05] SCAMBLR       - Anti-scammer attack toolkit", GREEN))
+    print(_line("[06] ...           - Coming soon", GRAY))
+    print(_line("[Q]  Quit", GRAY))
+    print(f"{CYAN}╚{'═' * MENU_WIDTH}╝{RESET}")
+
+
+# ─── main ──────────────────────────────────────────────────────────────────
+
+def main() -> None:
     while True:
-        os.system('cls' if os.name == 'nt' else 'clear')
-        print(R3CON_BANNER)
-        print(f"{CYAN}╔══════════════════════════════════════════════════════════════╗")
-        print(f"║ {WHITE}AVAILABLE TOOLKITS{RESET}                                          {CYAN}║")
-        print(f"╠══════════════════════════════════════════════════════════════╣")
-        print(f"║ {GREEN}[01]{RESET} F-SOCIETY - Network & Exploitation Suite           {CYAN}║")
-        print(f"║ {GREEN}[02]{RESET} CINT      - Cyber Intelligence Toolkit (Go)        {CYAN}║")
-        print(f"║ {GREEN}[03]{RESET} MC-KILLER - Minecraft Server Stress Framework      {CYAN}║")
-        print(f"║ {GRAY}[04] ...       - Coming Soon...{RESET}                             {CYAN}║")
-        print(f"║ {GRAY}[Q]  Quit{RESET}                                                  {CYAN}║")
-        print(f"╚══════════════════════════════════════════════════════════════╝{RESET}")
+        clear()
+        draw_menu()
+        try:
+            choice = input(f"\n{GREEN}r3con> {RESET}").strip().lower()
+        except (EOFError, KeyboardInterrupt):
+            print()
+            break
 
-        choice = input(f"\n{GREEN}root@r3con:~#{RESET} ").strip().lower()
-
-        if choice == "1":
+        if choice in ("1", "01", "fsociety"):
             launch_fsociety()
-        elif choice == "2":
+        elif choice in ("2", "02", "cint"):
             launch_cint()
-        elif choice == "3":
+        elif choice in ("3", "03", "mc-killer", "mckiller", "mc"):
             launch_mc_killer()
-        elif choice in ("q", "exit"):
-            print(f"\n{GRAY}[*] Exiting R3CON...{RESET}")
-            sys.exit(0)
+        elif choice in ("4", "04", "payloadforge", "pf"):
+            launch_payloadforge()
+        elif choice in ("5", "05", "scamblr", "sc"):
+            launch_scamblr()
+        elif choice in ("6", "06"):
+            print(f"\n{YELLOW}[*] coming soon — the bench is still cooking{RESET}")
+            time.sleep(1)
+        elif choice in ("q", "quit", "exit"):
+            break
+        else:
+            print(f"\n{RED}[!] unknown option: {choice}{RESET}")
+            time.sleep(1)
+
+    print(f"\n{CYAN}[*] R3CON signing off.{RESET}")
+
 
 if __name__ == "__main__":
-    main_menu()
+    main()
